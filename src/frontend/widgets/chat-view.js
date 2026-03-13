@@ -105,7 +105,10 @@ export class ChatView {
    * Finalize the current streaming message (if any).
    */
   _finalizeStreaming() {
-    this._streamingRow = null;
+    if (this._streamingRow) {
+      this._streamingRow.finalize();
+      this._streamingRow = null;
+    }
   }
 
   /**

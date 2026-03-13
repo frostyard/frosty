@@ -1,14 +1,76 @@
 import GLib from "gi://GLib";
 import Gtk from "gi://Gtk?version=4.0";
-import { markdownToPango } from "./markdown.js";
+import Adw from "gi://Adw?version=1";
+import GtkSource from "gi://GtkSource?version=5";
+import { markdownToPango, parseSegments } from "./markdown.js";
 
-/**
- * Creates a message row widget for the chat view.
- *
- * @param {"user"|"agent"} role - Who sent the message
- * @param {string} text - The message content
- * @returns {Gtk.Box} The message row widget
- */
+function _buildCodeBlock(code, language) {
+  const langManager = GtkSource.LanguageManager.get_default();
+  const lang = language ? langManager.get_language(language) : null;
+
+  const buffer = new GtkSource.Buffer();
+  buffer.set_text(code, -1);
+  if (lang) {
+    buffer.set_language(lang);
+    buffer.set_highlight_syntax(true);
+  }
+
+  const styleManager = Adw.StyleManager.get_default();
+  const isDark = styleManager.get_dark();
+  const schemeManager = GtkSource.StyleSchemeManager.get_default();
+  const scheme = schemeManager.get_scheme(isDark ? "Adwaita-dark" : "Adwaita");
+  if (scheme) {
+    buffer.set_style_scheme(scheme);
+  }
+
+  const view = new GtkSource.View({
+    buffer,
+    editable: false,
+    cursor_visible: false,
+    show_line_numbers: false,
+    monospace: true,
+    top_margin: 6,
+    bottom_margin: 6,
+    left_margin: 8,
+    right_margin: 8,
+    css_classes: ["card"],
+  });
+
+  return view;
+}
+
+function _buildSegmentedContent(text) {
+  const segments = parseSegments(text);
+  const box = new Gtk.Box({
+    orientation: Gtk.Orientation.VERTICAL,
+    spacing: 4,
+  });
+
+  for (const segment of segments) {
+    if (segment.type === "text") {
+      const label = new Gtk.Label({
+        label: markdownToPango(segment.content),
+        use_markup: true,
+        wrap: true,
+        wrap_mode: 2,
+        xalign: 0,
+        selectable: true,
+        css_classes: ["agent-message"],
+        margin_start: 8,
+        margin_end: 8,
+        margin_top: 4,
+        margin_bottom: 4,
+      });
+      box.append(label);
+    } else {
+      const codeView = _buildCodeBlock(segment.content, segment.language);
+      box.append(codeView);
+    }
+  }
+
+  return box;
+}
+
 export function createMessageRow(role, text) {
   const row = new Gtk.Box({
     orientation: Gtk.Orientation.HORIZONTAL,
@@ -19,32 +81,36 @@ export function createMessageRow(role, text) {
   });
 
   const isAgent = role === "agent";
-  const label = new Gtk.Label({
-    label: isAgent ? markdownToPango(text) : text,
-    use_markup: isAgent,
-    wrap: true,
-    wrap_mode: 2, // WORD_CHAR
-    xalign: 0,
-    selectable: true,
-    css_classes: [isAgent ? "agent-message" : "user-message"],
-    margin_start: 8,
-    margin_end: 8,
-    margin_top: 8,
-    margin_bottom: 8,
-  });
 
   const bubble = new Gtk.Box({
     css_classes: ["card", role === "user" ? "user-bubble" : "agent-bubble"],
   });
-  bubble.append(label);
+
+  if (isAgent) {
+    const content = _buildSegmentedContent(text);
+    bubble.append(content);
+  } else {
+    const label = new Gtk.Label({
+      label: text,
+      use_markup: false,
+      wrap: true,
+      wrap_mode: 2,
+      xalign: 0,
+      selectable: true,
+      css_classes: ["user-message"],
+      margin_start: 8,
+      margin_end: 8,
+      margin_top: 8,
+      margin_bottom: 8,
+    });
+    bubble.append(label);
+  }
 
   if (role === "user") {
-    // Right-align user messages
     const spacer = new Gtk.Box({ hexpand: true });
     row.append(spacer);
     row.append(bubble);
   } else {
-    // Left-align agent messages
     row.append(bubble);
     const spacer = new Gtk.Box({ hexpand: true });
     row.append(spacer);
@@ -53,12 +119,6 @@ export function createMessageRow(role, text) {
   return row;
 }
 
-/**
- * Creates an agent message row that can be appended to (for streaming).
- * Returns both the row widget and a function to append text.
- *
- * @returns {{ row: Gtk.Box, append: (text: string) => void, getText: () => string }}
- */
 export function createStreamingMessageRow() {
   const row = new Gtk.Box({
     orientation: Gtk.Orientation.HORIZONTAL,
@@ -100,12 +160,16 @@ export function createStreamingMessageRow() {
       try {
         label.set_markup(markdownToPango(content));
       } catch {
-        // If markup is invalid mid-stream (e.g. unclosed tag), fall back to plain
         label.set_label(content);
       }
     },
     getText() {
       return content;
+    },
+    finalize() {
+      bubble.remove(label);
+      const segmented = _buildSegmentedContent(content);
+      bubble.append(segmented);
     },
   };
 }
