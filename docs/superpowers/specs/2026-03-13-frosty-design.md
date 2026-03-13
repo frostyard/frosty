@@ -45,6 +45,10 @@ The `risk` field on `tool.request` drives tiered confirmation:
 
 The GTK app spawns the Node backend on startup and kills it on exit. The socket is the single communication channel.
 
+- **Startup:** Frontend spawns the backend process, then retry-connects to the socket until it becomes available (short backoff, ~100ms intervals, timeout after 5s).
+- **Backend crash:** Frontend detects socket EOF, shows an error in the chat, and offers to restart the backend.
+- **Settings:** Frontend reads/writes `~/.config/frosty/settings.json` directly (no IPC needed). Backend reads it on startup and when a new session begins.
+
 ## UI Design
 
 Main window with two panels:
@@ -111,7 +115,7 @@ All updex tools use `--json` for structured output parsing.
 |---|---|---|
 | `shell_exec` | mutating | Run an arbitrary shell command proposed by the agent |
 
-Pipe-to-shell patterns (`curl | bash`) are always escalated to `destructive`.
+Pipe-to-shell patterns (`curl | bash`) are always escalated to `destructive`. Detection: regex match for common patterns (`| bash`, `| sh`, `| sudo`) applied to the command string before execution.
 
 ## System Prompt
 
@@ -197,8 +201,8 @@ The first iteration delivers a vertical slice — one complete path from UI to s
 - Flatpak skill (fully implemented)
 - Shell skill (ad-hoc fallback)
 - Tiered confirmation flow (all three levels)
-- Session history persistence (save/load)
-- Provider settings (API key, model selection)
+- Session history persistence (save/load). MVP has no session sidebar — new session on launch, `session.load` available via IPC for future UI.
+- Provider settings (API key, model selection). Frontend reads/writes settings.json directly; a simple preferences dialog.
 - System prompt with full Snow Linux context
 
 ## Deferred Roadmap
