@@ -14,6 +14,7 @@ export class ChatView {
     this._onSendMessage = onSendMessage;
     this._streamingRow = null;
     this._messages = [];
+    this._spinnerRow = null;
 
     this.widget = new Gtk.Box({
       orientation: Gtk.Orientation.VERTICAL,
@@ -66,6 +67,7 @@ export class ChatView {
 
     this.addUserMessage(text);
     this._entry.set_text("");
+    this._showSpinner();
     this._onSendMessage(text);
   }
 
@@ -95,6 +97,7 @@ export class ChatView {
    * @param {string} delta
    */
   appendAgentText(delta) {
+    this._hideSpinner();
     if (!this._streamingRow) {
       this._streamingRow = createStreamingMessageRow();
       this._messageList.append(this._streamingRow.row);
@@ -124,6 +127,7 @@ export class ChatView {
    * @param {function} onCancel
    */
   showConfirmation(toolCallId, toolName, args, onApprove, onCancel) {
+    this._hideSpinner();
     this._finalizeStreaming();
     const bar = createConfirmBar(toolName, args, onApprove, onCancel);
     this._messageList.append(bar);
@@ -135,10 +139,39 @@ export class ChatView {
    * @param {string} message
    */
   showError(message) {
+    this._hideSpinner();
     this._finalizeStreaming();
     const row = createMessageRow("agent", `Error: ${message}`);
     this._messageList.append(row);
     this._scrollToBottom();
+  }
+
+  _showSpinner() {
+    this._hideSpinner();
+    const row = new Gtk.Box({
+      orientation: Gtk.Orientation.HORIZONTAL,
+      margin_start: 12,
+      margin_top: 4,
+      margin_bottom: 4,
+      spacing: 8,
+    });
+    const spinner = new Gtk.Spinner({ spinning: true });
+    row.append(spinner);
+    const label = new Gtk.Label({
+      label: "Thinking...",
+      css_classes: ["dim-label", "caption"],
+    });
+    row.append(label);
+    this._spinnerRow = row;
+    this._messageList.append(row);
+    this._scrollToBottom();
+  }
+
+  _hideSpinner() {
+    if (this._spinnerRow) {
+      this._messageList.remove(this._spinnerRow);
+      this._spinnerRow = null;
+    }
   }
 
   clear() {
