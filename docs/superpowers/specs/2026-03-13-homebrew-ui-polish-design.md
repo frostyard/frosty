@@ -2,6 +2,8 @@
 
 Covers the next phase of Frosty development: Homebrew skill, streaming command output with ANSI color support, syntax highlighting for code blocks, and a toggleable session sidebar. Organized as three vertical slices, each independently testable end-to-end.
 
+**Note:** This spec supersedes the Homebrew section of the original design spec (`2026-03-13-frosty-design.md`). The original spec listed fewer Homebrew tools and classified `brew_update` as mutating; this spec refines the tool set with separate update/upgrade commands and additional maintenance tools.
+
 ## Slice 1: Homebrew Skill
 
 ### Overview
@@ -46,18 +48,21 @@ Two related features: live command output in the activity panel with ANSI color 
 
 **No backend changes required.** The `tool.output` IPC message already exists with `{ toolCallId, delta }`. The executor already streams stdout/stderr. The gap is in `window.js` where `onToolOutput` is currently a no-op.
 
-**Activity panel entry changes:**
+**Activity panel interface changes:**
 
-- When a tool starts running (`setRunning`), a read-only monospace `GtkTextView` is created inside the entry's card widget
+`ActivityPanel` gains a new method: `appendOutput(toolCallId, delta)`. `window.js` wires `onToolOutput` to call `this._activityPanel.appendOutput(msg.toolCallId, msg.delta)`.
+
+- When `setRunning` is called, a read-only monospace `GtkTextView` is created inside the entry's card widget
 - The text view is wrapped in a `GtkScrolledWindow` with max height ~200px
 - Output area is collapsed by default; a "Show Output" / "Hide Output" toggle reveals it
-- Each `tool.output` delta is appended to the `GtkTextBuffer`
-- Auto-scrolls to bottom while running; stops if user scrolls up manually
+- Each `appendOutput` call appends the delta to the `GtkTextBuffer`
+- Auto-scrolls to bottom while running; stops if user scrolls up manually; re-engages if user scrolls back to bottom
 - ANSI color parsing covers the standard set:
   - Foreground colors: 30-37 (standard), 90-97 (bright)
   - Background colors: 40-47 (standard), 100-107 (bright)
   - Bold (1), dim (2), italic (3), underline (4), reset (0)
   - SGR sequences (`\e[...m`) only — no cursor movement
+  - 256-color (`38;5;N`) and truecolor (`38;2;R;G;B`) sequences are gracefully stripped (not rendered, not crashing)
 - Colors are applied via `GtkTextTag` objects on the `GtkTextBuffer`
 - An ANSI parser module (`src/frontend/widgets/ansi-parser.js`) handles stripping escape sequences and returning `[{ text, attrs }]` segments
 
@@ -84,6 +89,8 @@ Two related features: live command output in the activity panel with ANSI color 
    - Read-only, no line numbers, monospace
    - Uses the default GtkSourceView style scheme (respects dark/light theme)
    - Falls back to plain `GtkTextView` (monospace) if language hint is missing or unrecognized
+
+**Streaming messages:** `createStreamingMessageRow` continues using the current single `GtkLabel` with `markdownToPango` during streaming. When the stream completes, the label is replaced with the segmented `GtkBox` rendering (text labels + `GtkSourceView` code blocks). This avoids the complexity of dynamically adding/removing `GtkSourceView` widgets mid-stream while still providing syntax highlighting in the final message. The `finalize()` method on the streaming row handles this swap.
 
 ### Files Changed
 
@@ -138,23 +145,27 @@ New file `src/frontend/widgets/session-sidebar.js`:
 - New export `getSessionSummaries()`: reads each session file's metadata (title + updatedAt) without loading full message arrays. Returns `[{ sessionId, title, updatedAt }]` sorted by `updatedAt` descending.
 - Backward compatible: if an existing session file lacks `title`/`updatedAt`, derive title from first message or use "Untitled", and use file mtime for timestamp.
 
+### Backend Session Handling
+
+Session state is primarily frontend-owned. The backend is stateless between requests — each `handleUserMessage` call creates a fresh `one-agent-sdk` `run()` with no conversation memory. The `session.load` and `session.new` IPC messages serve as signals for the backend to reset any in-flight state (e.g., pending confirmations). No conversation history replay is needed on the backend side — the frontend holds the message list and sends new user messages as fresh requests.
+
+Future iterations may add backend conversation context (see Iteration 5: "Context from past sessions"), but that is out of scope here.
+
 ### Session Switching Flow
 
 1. User clicks session row
 2. Frontend calls `loadSession(sessionId)` to get messages
 3. Frontend rebuilds `ChatView` message list from loaded messages
-4. Frontend sends `{ type: "session.load", sessionId }` over IPC
-5. Backend reloads conversation history for that session
-6. `this._sessionId` is updated
+4. Frontend sends `{ type: "session.load", sessionId }` over IPC — backend clears pending confirmations
+5. Frontend updates `this._sessionId`
 
 ### New Session Flow
 
 1. User clicks "New Session" button
-2. Frontend generates new UUID
+2. Frontend generates new UUID, updates `this._sessionId`
 3. Frontend clears `ChatView`
-4. Frontend sends `{ type: "session.new" }` over IPC
-5. `this._sessionId` is updated
-6. New session appears in sidebar after first message is sent (triggers save)
+4. Frontend sends `{ type: "session.new" }` over IPC — backend clears pending confirmations
+5. New session appears in sidebar after first message is sent (triggers save)
 
 ### Files Changed
 
