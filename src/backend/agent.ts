@@ -131,7 +131,7 @@ export async function handleUserMessage(
   const tools = createAgentTools(send);
 
   const config: RunConfig = {
-    provider: (settings.provider || "anthropic") as RunConfig["provider"],
+    provider: (settings.provider || "claude-code") as RunConfig["provider"],
     agent: {
       name: "frosty",
       description: "Snow Linux system administration assistant",

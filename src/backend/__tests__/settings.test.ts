@@ -21,7 +21,7 @@ describe("settings", () => {
 
   it("returns defaults when no settings file exists", () => {
     const settings = loadSettings();
-    expect(settings.provider).toBe("anthropic");
+    expect(settings.provider).toBe("claude-code");
     expect(settings.apiKey).toBe("");
   });
 

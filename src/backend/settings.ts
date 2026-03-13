@@ -9,7 +9,7 @@ export interface FrostySettings {
 }
 
 const DEFAULT_SETTINGS: FrostySettings = {
-  provider: "anthropic",
+  provider: "claude-code",
   apiKey: "",
 };
 

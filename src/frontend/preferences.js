@@ -16,10 +16,10 @@ function ensureConfigDir() {
 function loadSettings() {
   try {
     const [ok, contents] = GLib.file_get_contents(SETTINGS_PATH);
-    if (!ok) return { provider: "anthropic", apiKey: "", model: "" };
+    if (!ok) return { provider: "claude-code", apiKey: "", model: "" };
     return JSON.parse(new TextDecoder().decode(contents));
   } catch {
-    return { provider: "anthropic", apiKey: "", model: "" };
+    return { provider: "claude-code", apiKey: "", model: "" };
   }
 }
 
@@ -55,7 +55,7 @@ export function showPreferences(parent) {
   const providerRow = new Adw.ComboRow({
     title: "Provider",
   });
-  const providers = ["anthropic", "openai", "openrouter", "claude-code", "codex"];
+  const providers = ["claude-code", "anthropic", "openai", "openrouter", "codex"];
   const providerListModel = Gtk.StringList.new(providers);
   providerRow.set_model(providerListModel);
   const currentIdx = providers.indexOf(settings.provider);
@@ -80,7 +80,7 @@ export function showPreferences(parent) {
   dialog.connect("closed", () => {
     const selected = providerRow.get_selected();
     saveSettings({
-      provider: providers[selected] || "anthropic",
+      provider: providers[selected] || "claude-code",
       apiKey: apiKeyRow.get_text(),
       model: modelRow.get_text() || undefined,
     });
