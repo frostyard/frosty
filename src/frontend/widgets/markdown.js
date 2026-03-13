@@ -114,3 +114,38 @@ function _renderTable(block) {
 
   return `\n<tt>${rendered.join("\n")}</tt>\n`;
 }
+
+/**
+ * Split a markdown string into text and code block segments.
+ *
+ * @param {string} text - Raw markdown
+ * @returns {Array<{type: 'text', content: string} | {type: 'code', language: string, content: string}>}
+ */
+export function parseSegments(text) {
+  const segments = [];
+  const codeBlockRegex = /```([^\n]*)\n([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    const before = text.slice(lastIndex, match.index).trim();
+    if (before) {
+      segments.push({ type: "text", content: before });
+    }
+
+    segments.push({
+      type: "code",
+      language: match[1].trim(),
+      content: match[2].trimEnd(),
+    });
+
+    lastIndex = codeBlockRegex.lastIndex;
+  }
+
+  const remaining = text.slice(lastIndex).trim();
+  if (remaining) {
+    segments.push({ type: "text", content: remaining });
+  }
+
+  return segments;
+}
