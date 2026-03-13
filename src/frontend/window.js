@@ -134,10 +134,7 @@ export class FrostyWindow {
     this._ipc.disconnect();
     if (this._backendPid) {
       try {
-        // Use POSIX signal directly via GLib
-        imports.system.exit
-          ? GLib.spawn_command_line_sync(`kill ${this._backendPid}`)
-          : null;
+        GLib.spawn_command_line_sync(`kill ${this._backendPid}`);
       } catch {
         // Process may have already exited
       }
@@ -171,11 +168,18 @@ export class FrostyWindow {
       dialog.set_response_appearance("run", Adw.ResponseAppearance.DESTRUCTIVE);
 
       dialog.connect("response", (_dialog, response) => {
-        this._ipc.send({
-          type: response === "run" ? "confirm" : "cancel",
-          toolCallId: msg.toolCallId,
-          approved: response === "run",
-        });
+        if (response === "run") {
+          this._ipc.send({
+            type: "confirm",
+            toolCallId: msg.toolCallId,
+            approved: true,
+          });
+        } else {
+          this._ipc.send({
+            type: "cancel",
+            toolCallId: msg.toolCallId,
+          });
+        }
       });
 
       dialog.present(this._window);

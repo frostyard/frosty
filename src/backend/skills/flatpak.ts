@@ -1,5 +1,10 @@
 import type { ToolDefinition, ToolResult } from "./types.js";
 
+function shellEscape(arg: string): string {
+  // Wrap in single quotes, escaping any embedded single quotes
+  return "'" + arg.replace(/'/g, "'\\''") + "'";
+}
+
 export const flatpakTools: ToolDefinition[] = [
   {
     name: "flatpak_list",
@@ -49,16 +54,16 @@ export function buildFlatpakCommand(
       command = "flatpak list --app --columns=application,name,version";
       break;
     case "flatpak_search":
-      command = `flatpak search ${String(args.query)}`;
+      command = `flatpak search ${shellEscape(String(args.query))}`;
       break;
     case "flatpak_info":
-      command = `flatpak info ${String(args.appId)}`;
+      command = `flatpak info ${shellEscape(String(args.appId))}`;
       break;
     case "flatpak_install":
-      command = `flatpak install -y flathub ${String(args.appId)}`;
+      command = `flatpak install -y flathub ${shellEscape(String(args.appId))}`;
       break;
     case "flatpak_uninstall":
-      command = `flatpak uninstall -y ${String(args.appId)}`;
+      command = `flatpak uninstall -y ${shellEscape(String(args.appId))}`;
       break;
     case "flatpak_update":
       command = "flatpak update -y";

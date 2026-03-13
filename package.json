@@ -1,5 +1,5 @@
 {
-  "name": "mvp",
+  "name": "frosty",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
     "backend": "tsx src/backend/main.ts",
     "build": "tsc"
   },
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "tinyexec": "^1.0.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"

@@ -26,7 +26,7 @@ describe("buildFlatpakCommand", () => {
 
   it("builds a search command", () => {
     const result = buildFlatpakCommand("flatpak_search", { query: "firefox" });
-    expect(result.command).toBe("flatpak search firefox");
+    expect(result.command).toBe("flatpak search 'firefox'");
     expect(result.risk).toBe("safe");
   });
 
@@ -34,7 +34,7 @@ describe("buildFlatpakCommand", () => {
     const result = buildFlatpakCommand("flatpak_install", {
       appId: "org.mozilla.firefox",
     });
-    expect(result.command).toBe("flatpak install -y flathub org.mozilla.firefox");
+    expect(result.command).toBe("flatpak install -y flathub 'org.mozilla.firefox'");
     expect(result.risk).toBe("mutating");
   });
 
@@ -42,7 +42,7 @@ describe("buildFlatpakCommand", () => {
     const result = buildFlatpakCommand("flatpak_uninstall", {
       appId: "org.mozilla.firefox",
     });
-    expect(result.command).toBe("flatpak uninstall -y org.mozilla.firefox");
+    expect(result.command).toBe("flatpak uninstall -y 'org.mozilla.firefox'");
     expect(result.risk).toBe("mutating");
   });
 
@@ -56,7 +56,7 @@ describe("buildFlatpakCommand", () => {
     const result = buildFlatpakCommand("flatpak_info", {
       appId: "org.mozilla.firefox",
     });
-    expect(result.command).toBe("flatpak info org.mozilla.firefox");
+    expect(result.command).toBe("flatpak info 'org.mozilla.firefox'");
     expect(result.risk).toBe("safe");
   });
 
