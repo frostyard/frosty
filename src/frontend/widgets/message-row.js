@@ -2,53 +2,11 @@ import GLib from "gi://GLib";
 import Gtk from "gi://Gtk?version=4.0";
 import { markdownToPango, parseSegments } from "./markdown.js";
 
-// Try to load GtkSourceView 5 — optional dependency
-let GtkSource = null;
-let Adw = null;
-try {
-  GtkSource = (await import("gi://GtkSource?version=5")).default;
-  Adw = (await import("gi://Adw?version=1")).default;
-} catch {
-  // GtkSourceView not available — fall back to plain GtkTextView
-}
+// GtkSourceView is not available on Snow Linux (no typelib for v5,
+// v4 conflicts with GTK4). Using plain GtkTextView for code blocks.
+// Re-enable when packaging as Flatpak with gir1.2-gtksource-5.
 
-function _buildCodeBlock(code, language) {
-  if (GtkSource) {
-    const langManager = GtkSource.LanguageManager.get_default();
-    const lang = language ? langManager.get_language(language) : null;
-
-    const buffer = new GtkSource.Buffer();
-    buffer.set_text(code, -1);
-    if (lang) {
-      buffer.set_language(lang);
-      buffer.set_highlight_syntax(true);
-    }
-
-    const styleManager = Adw.StyleManager.get_default();
-    const isDark = styleManager.get_dark();
-    const schemeManager = GtkSource.StyleSchemeManager.get_default();
-    const scheme = schemeManager.get_scheme(isDark ? "Adwaita-dark" : "Adwaita");
-    if (scheme) {
-      buffer.set_style_scheme(scheme);
-    }
-
-    const view = new GtkSource.View({
-      buffer,
-      editable: false,
-      cursor_visible: false,
-      show_line_numbers: false,
-      monospace: true,
-      top_margin: 6,
-      bottom_margin: 6,
-      left_margin: 8,
-      right_margin: 8,
-      css_classes: ["card"],
-    });
-
-    return view;
-  }
-
-  // Fallback: plain monospace GtkTextView
+function _buildCodeBlock(code, _language) {
   const buffer = new Gtk.TextBuffer();
   buffer.set_text(code, -1);
   const view = new Gtk.TextView({

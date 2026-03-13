@@ -3,15 +3,6 @@ import Gio from "gi://Gio";
 
 /**
  * IPC client that connects to the Frosty backend over a Unix socket.
- *
- * @param {object} callbacks - Message handlers
- * @param {function} callbacks.onText - Called with {delta: string}
- * @param {function} callbacks.onToolRequest - Called with {toolCallId, name, args, risk}
- * @param {function} callbacks.onToolRunning - Called with {toolCallId}
- * @param {function} callbacks.onToolOutput - Called with {toolCallId, delta}
- * @param {function} callbacks.onToolDone - Called with {toolCallId, exitCode}
- * @param {function} callbacks.onError - Called with {message: string}
- * @param {function} callbacks.onDisconnect - Called when connection drops
  */
 export class IPCClient {
   constructor(callbacks) {
@@ -23,10 +14,10 @@ export class IPCClient {
 
   /**
    * Connect to the backend socket with retry logic.
-   * @param {string} socketPath - Path to the Unix domain socket
-   * @param {number} maxRetries - Maximum connection attempts
-   * @param {number} intervalMs - Milliseconds between retries
-   * @returns {Promise<boolean>} true if connected
+   * @param {string} socketPath
+   * @param {number} maxRetries
+   * @param {number} intervalMs
+   * @returns {Promise<boolean>}
    */
   async connect(socketPath, maxRetries = 50, intervalMs = 100) {
     const client = new Gio.SocketClient();
@@ -36,35 +27,38 @@ export class IPCClient {
       try {
         log(`IPC: connect attempt ${attempt + 1} to ${socketPath}`);
         this._connection = await client.connect_async(address, null);
-        log(`IPC: connected! ${this._connection}`);
+        log(`IPC: connected!`);
         this._outputStream = this._connection.get_output_stream();
         this._startReading();
         return true;
       } catch (e) {
         log(`IPC: attempt ${attempt + 1} failed: ${e.message}`);
-        await new Promise((resolve) =>
-          GLib.timeout_add(GLib.PRIORITY_DEFAULT, intervalMs, () => {
-            resolve();
-            return GLib.SOURCE_REMOVE;
-          }),
-        );
+        await this._sleep(intervalMs);
       }
     }
 
     return false;
   }
 
+  _sleep(ms) {
+    return new Promise((resolve) =>
+      GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
+        resolve();
+        return GLib.SOURCE_REMOVE;
+      }),
+    );
+  }
+
   /**
    * Send a message to the backend.
-   * @param {object} msg - A ClientMessage object
+   * @param {object} msg
    */
   send(msg) {
     if (!this._outputStream) return;
     const line = JSON.stringify(msg) + "\n";
     const bytes = new GLib.Bytes(new TextEncoder().encode(line));
-    this._outputStream.write_bytes_async(bytes, GLib.PRIORITY_DEFAULT, null).catch((err) => {
-      log(`IPC send error: ${err.message}`);
-    });
+    this._outputStream.write_bytes_async(bytes, GLib.PRIORITY_DEFAULT, null)
+      .catch((err) => log(`IPC send error: ${err.message}`));
   }
 
   _startReading() {
@@ -83,20 +77,14 @@ export class IPCClient {
     log("IPC: read loop started");
     while (this._reading) {
       try {
-        const result = await stream.read_line_async(GLib.PRIORITY_DEFAULT, null);
-        log(`IPC: read_line_async returned: ${typeof result}, isArray=${Array.isArray(result)}`);
-
-        // read_line_finish_utf8 returns [string|null, length]
-        const line = Array.isArray(result) ? result[0] : result;
+        const [line] = await stream.read_line_async(GLib.PRIORITY_DEFAULT, null);
 
         if (line === null) {
-          log("IPC: got null line (EOF), disconnecting");
           this._reading = false;
           this._callbacks.onDisconnect?.();
           return;
         }
 
-        // line is already a string from read_line_finish_utf8
         const text = typeof line === "string" ? line : new TextDecoder().decode(line);
         if (text.length === 0) continue;
 
