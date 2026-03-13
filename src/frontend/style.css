@@ -22,3 +22,19 @@
 .monospace {
   font-family: monospace;
 }
+
+.tool-output {
+  font-family: monospace;
+  font-size: 0.85em;
+  padding: 6px 8px;
+  background-color: @view_bg_color;
+  border-radius: 6px;
+}
+
+.tool-output-scroll {
+  max-height: 200px;
+  margin-top: 4px;
+  margin-start: 8px;
+  margin-end: 8px;
+  margin-bottom: 4px;
+}

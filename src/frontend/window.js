@@ -72,9 +72,8 @@ export class FrostyWindow {
       onText: (msg) => this._chatView.appendAgentText(msg.delta),
       onToolRequest: (msg) => this._handleToolRequest(msg),
       onToolRunning: (msg) => this._activityPanel.setRunning(msg.toolCallId),
-      onToolOutput: (_msg) => {
-        // MVP: tool output not displayed (deferred to Iteration 3)
-      },
+      onToolOutput: (msg) =>
+        this._activityPanel.appendOutput(msg.toolCallId, msg.delta),
       onToolDone: (msg) =>
         this._activityPanel.setDone(msg.toolCallId, msg.exitCode),
       onError: (msg) => this._chatView.showError(msg.message),
