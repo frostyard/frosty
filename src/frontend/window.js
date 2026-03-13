@@ -1,4 +1,5 @@
 import GLib from "gi://GLib";
+import GObject from "gi://GObject";
 import Gio from "gi://Gio";
 import Gtk from "gi://Gtk?version=4.0";
 import Adw from "gi://Adw?version=1";
@@ -78,7 +79,7 @@ export class FrostyWindow {
       "active",
       this._splitView,
       "show-sidebar",
-      GLib.BindingFlags.BIDIRECTIONAL | GLib.BindingFlags.SYNC_CREATE,
+      GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE,
     );
 
     const toolbarView = new Adw.ToolbarView();

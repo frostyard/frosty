@@ -108,7 +108,11 @@ export class ActivityPanel {
       css_classes: ["tool-output-scroll"],
       hscrollbar_policy: Gtk.PolicyType.NEVER,
       visible: false,
+      margin_start: 8,
+      margin_end: 8,
     });
+    scrolledWindow.set_max_content_height(200);
+    scrolledWindow.set_propagate_natural_height(true);
     scrolledWindow.set_child(textView);
 
     toggleBtn.connect("toggled", () => {
