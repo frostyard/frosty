@@ -13,6 +13,7 @@ export class ChatView {
   constructor(onSendMessage) {
     this._onSendMessage = onSendMessage;
     this._streamingRow = null;
+    this._messages = [];
 
     this.widget = new Gtk.Box({
       orientation: Gtk.Orientation.VERTICAL,
@@ -83,6 +84,7 @@ export class ChatView {
    */
   addUserMessage(text) {
     this._finalizeStreaming();
+    this._messages.push({ role: "user", text, timestamp: Date.now() });
     const row = createMessageRow("user", text);
     this._messageList.append(row);
     this._scrollToBottom();
@@ -106,6 +108,8 @@ export class ChatView {
    */
   _finalizeStreaming() {
     if (this._streamingRow) {
+      const text = this._streamingRow.getText();
+      this._messages.push({ role: "agent", text, timestamp: Date.now() });
       this._streamingRow.finalize();
       this._streamingRow = null;
     }
@@ -135,5 +139,27 @@ export class ChatView {
     const row = createMessageRow("agent", `Error: ${message}`);
     this._messageList.append(row);
     this._scrollToBottom();
+  }
+
+  clear() {
+    this._finalizeStreaming();
+    this._messages = [];
+    let child;
+    while ((child = this._messageList.get_first_child())) {
+      this._messageList.remove(child);
+    }
+  }
+
+  addAgentMessage(text) {
+    this._finalizeStreaming();
+    this._messages.push({ role: "agent", text, timestamp: Date.now() });
+    const row = createMessageRow("agent", text);
+    this._messageList.append(row);
+    this._scrollToBottom();
+  }
+
+  getMessages() {
+    this._finalizeStreaming();
+    return [...this._messages];
   }
 }

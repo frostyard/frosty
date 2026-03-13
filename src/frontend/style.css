@@ -38,3 +38,7 @@
   margin-end: 8px;
   margin-bottom: 4px;
 }
+
+.sidebar {
+  background-color: @sidebar_bg_color;
+}
