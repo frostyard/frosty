@@ -118,6 +118,38 @@ function buildParamsSchema(toolName: string): z.ZodType {
           .describe("The shell command to execute"),
       });
 
+    case "brew_list":
+    case "brew_update":
+    case "brew_doctor":
+    case "brew_cleanup":
+      return z.object({});
+
+    case "brew_search":
+      return z.object({
+        query: z.string().describe("Search query"),
+      });
+
+    case "brew_info":
+      return z.object({
+        name: z.string().describe("Formula or cask name"),
+      });
+
+    case "brew_install":
+      return z.object({
+        name: z.string().describe("Formula or cask name to install"),
+      });
+
+    case "brew_uninstall":
+      return z.object({
+        name: z.string().describe("Formula or cask name to remove"),
+      });
+
+    case "brew_upgrade":
+      return z.object({
+        formula: z.string().optional().describe("Specific formula to upgrade (omit for all)"),
+        greedy: z.boolean().optional().describe("Use --greedy to upgrade casks with auto-updates"),
+      });
+
     default:
       return z.object({});
   }
