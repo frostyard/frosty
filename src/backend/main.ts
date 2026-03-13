@@ -3,6 +3,7 @@ import { createIPCServer } from "./ipc.js";
 import {
   handleUserMessage,
   resolveConfirmation,
+  clearConfirmations,
 } from "./agent.js";
 import type { ClientMessage } from "./ipc-types.js";
 import type { SendFn } from "./ipc.js";
@@ -30,11 +31,11 @@ async function handleMessage(
       break;
 
     case "session.new":
-      // MVP: no-op, each message is independent
+      clearConfirmations();
       break;
 
     case "session.load":
-      // MVP: no-op, deferred to iteration 3
+      clearConfirmations();
       break;
   }
 }

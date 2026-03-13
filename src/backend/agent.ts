@@ -17,6 +17,10 @@ export function resolveConfirmation(
   confirmations.resolve(toolCallId, approved);
 }
 
+export function clearConfirmations(): void {
+  confirmations.clearAll();
+}
+
 /**
  * Build one-agent-sdk ToolDef[] from the skill registry.
  *

@@ -14,4 +14,11 @@ export class ConfirmationManager {
       this.pending.delete(toolCallId);
     }
   }
+
+  clearAll(): void {
+    for (const [id, resolver] of this.pending) {
+      resolver(false);
+    }
+    this.pending.clear();
+  }
 }
