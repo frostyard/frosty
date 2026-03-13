@@ -1,5 +1,6 @@
 import GLib from "gi://GLib";
 import Gtk from "gi://Gtk?version=4.0";
+import { markdownToPango } from "./markdown.js";
 
 /**
  * Creates a message row widget for the chat view.
@@ -17,13 +18,15 @@ export function createMessageRow(role, text) {
     margin_bottom: 4,
   });
 
+  const isAgent = role === "agent";
   const label = new Gtk.Label({
-    label: text,
+    label: isAgent ? markdownToPango(text) : text,
+    use_markup: isAgent,
     wrap: true,
     wrap_mode: 2, // WORD_CHAR
     xalign: 0,
     selectable: true,
-    css_classes: [role === "user" ? "user-message" : "agent-message"],
+    css_classes: [isAgent ? "agent-message" : "user-message"],
     margin_start: 8,
     margin_end: 8,
     margin_top: 8,
@@ -69,6 +72,7 @@ export function createStreamingMessageRow() {
 
   const label = new Gtk.Label({
     label: "",
+    use_markup: true,
     wrap: true,
     wrap_mode: 2,
     xalign: 0,
@@ -93,7 +97,12 @@ export function createStreamingMessageRow() {
     row,
     append(text) {
       content += text;
-      label.set_label(content);
+      try {
+        label.set_markup(markdownToPango(content));
+      } catch {
+        // If markup is invalid mid-stream (e.g. unclosed tag), fall back to plain
+        label.set_label(content);
+      }
     },
     getText() {
       return content;

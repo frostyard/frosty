@@ -2,13 +2,11 @@
   background-color: @accent_bg_color;
   color: @accent_fg_color;
   border-radius: 12px;
-  max-width: 70%;
 }
 
 .agent-bubble {
   background-color: @card_bg_color;
   border-radius: 12px;
-  max-width: 80%;
 }
 
 .user-message,
