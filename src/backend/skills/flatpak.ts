@@ -1,9 +1,5 @@
 import type { ToolDefinition, ToolResult } from "./types.js";
-
-function shellEscape(arg: string): string {
-  // Wrap in single quotes, escaping any embedded single quotes
-  return "'" + arg.replace(/'/g, "'\\''") + "'";
-}
+import { shellEscape } from "./types.js";
 
 export const flatpakTools: ToolDefinition[] = [
   {

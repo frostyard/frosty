@@ -1,8 +1,5 @@
 import type { ToolDefinition, ToolResult } from "./types.js";
-
-function shellEscape(arg: string): string {
-  return "'" + arg.replace(/'/g, "'\\''") + "'";
-}
+import { shellEscape } from "./types.js";
 
 export const brewTools: ToolDefinition[] = [
   { name: "brew_list", description: "List installed Homebrew formulae and casks", risk: "safe" },

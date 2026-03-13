@@ -10,3 +10,7 @@ export interface ToolResult {
   command: string;
   risk: RiskLevel;
 }
+
+export function shellEscape(arg: string): string {
+  return "'" + arg.replace(/'/g, "'\\''") + "'";
+}
