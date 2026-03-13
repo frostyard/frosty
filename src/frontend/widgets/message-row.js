@@ -1,7 +1,7 @@
 import GLib from "gi://GLib";
 import Gtk from "gi://Gtk?version=4.0";
 import Adw from "gi://Adw?version=1";
-import GtkSource from "gi://GtkSource?version=5";
+import GtkSource from "gi://GtkSource?version=4";
 import { markdownToPango, parseSegments } from "./markdown.js";
 
 function _buildCodeBlock(code, language) {
