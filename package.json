@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.75",
     "one-agent-sdk": "^0.1.7",
     "zod": "^4.3.6"
   },

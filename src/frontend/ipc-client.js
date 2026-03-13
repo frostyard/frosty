@@ -34,11 +34,14 @@ export class IPCClient {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
+        log(`IPC: connect attempt ${attempt + 1} to ${socketPath}`);
         this._connection = await client.connect_async(address, null);
+        log(`IPC: connected! ${this._connection}`);
         this._outputStream = this._connection.get_output_stream();
         this._startReading();
         return true;
-      } catch {
+      } catch (e) {
+        log(`IPC: attempt ${attempt + 1} failed: ${e.message}`);
         await new Promise((resolve) =>
           GLib.timeout_add(GLib.PRIORITY_DEFAULT, intervalMs, () => {
             resolve();
@@ -77,16 +80,24 @@ export class IPCClient {
   }
 
   async _readLoop(stream) {
+    log("IPC: read loop started");
     while (this._reading) {
       try {
-        const [line] = await stream.read_line_async(GLib.PRIORITY_DEFAULT, null);
+        const result = await stream.read_line_async(GLib.PRIORITY_DEFAULT, null);
+        log(`IPC: read_line_async returned: ${typeof result}, isArray=${Array.isArray(result)}`);
+
+        // read_line_finish_utf8 returns [string|null, length]
+        const line = Array.isArray(result) ? result[0] : result;
+
         if (line === null) {
+          log("IPC: got null line (EOF), disconnecting");
           this._reading = false;
           this._callbacks.onDisconnect?.();
           return;
         }
 
-        const text = new TextDecoder().decode(line);
+        // line is already a string from read_line_finish_utf8
+        const text = typeof line === "string" ? line : new TextDecoder().decode(line);
         if (text.length === 0) continue;
 
         let msg;
